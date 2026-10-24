@@ -76,3 +76,73 @@ test('simultaneous touch pads play once each, then cancel cleanly', async ({ bro
   await expect(page.locator('#note-count')).toHaveText('003 NOTES INTO THE UNKNOWN');
   await context.close();
 });
+
+async function setQuickLoop(page) {
+  await page.getByRole('button', { name: 'Loop settings', exact: true }).click();
+  await page.getByLabel('Tempo in BPM').fill('180');
+  await page.getByLabel('Loop length', { exact: true }).selectOption('4');
+  await page.getByLabel('Note timing', { exact: true }).selectOption('0.25');
+  await page.getByRole('button', { name: 'Ready to play' }).click();
+}
+async function recordOne(page) {
+  await page.getByRole('button', { name: 'Record loop', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Finish recording', exact: true })).toBeVisible({ timeout: 10000 });
+  await page.keyboard.press('a');
+  await expect(page.locator('[data-owner="you"]')).toHaveCount(1, { timeout: 10000 });
+}
+test('a recorded layer repeats, a partner receives it, and a late joiner inherits it', async ({ context }) => {
+  const a = await context.newPage(), b = await context.newPage();
+  await a.goto(`${origin}/?room=loop-band`); await b.goto(`${origin}/?room=loop-band`);
+  await b.locator('#start').click(); await setQuickLoop(a); await a.locator('[data-instrument="drums"]').click();
+  await recordOne(a);
+  await a.locator('#loop-station').evaluate(el => { el.open = true; });
+  await b.locator('#loop-station').evaluate(el => { el.open = true; });
+  await expect(b.locator('[data-owner="partner"]')).toHaveCount(1);
+  const first = await b.locator('#note-count').textContent();
+  await expect.poll(async () => (await b.locator('#note-count').textContent()) !== first, { timeout: 5000 }).toBe(true);
+  const newcomer = await context.newPage(); await newcomer.goto(`${origin}/?room=loop-band`);
+  await expect(newcomer.locator('#layer-count')).toHaveText('1 layer');
+  await a.getByRole('button', { name: 'Mute Loose drums loop', exact: true }).click();
+  await expect(b.locator('.partner-loop-status')).toHaveText('MUTED');
+  await a.getByRole('button', { name: 'Remove Loose drums loop', exact: true }).click();
+  await expect(b.locator('#layer-count')).toHaveText('0 layers'); await expect(newcomer.locator('#layer-count')).toHaveText('0 layers');
+});
+test('overdubbing adds a new instrument, undo restores the take, and settings keep room tempo fixed', async ({ page }) => {
+  await page.goto(`${origin}/?room=overdub`); await setQuickLoop(page); await recordOne(page);
+  await page.locator('#loop-station').evaluate(el => { el.open = true; });
+  await page.locator('[data-instrument="sax"]').click();
+  await page.getByRole('button', { name: 'Overdub Soft keys loop', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Finish recording', exact: true })).toBeVisible({ timeout: 10000 });
+  await page.keyboard.press('f');
+  await expect(page.locator('.loop-layer-info strong')).toHaveText('Mixed voices', { timeout: 10000 });
+  await page.getByRole('button', { name: 'Undo last take', exact: true }).click();
+  await expect(page.locator('.loop-layer-info strong')).toHaveText('Soft keys');
+  await page.getByRole('button', { name: 'Loop settings', exact: true }).click();
+  await expect(page.getByLabel('Tempo in BPM')).toBeDisabled();
+  await page.getByRole('button', { name: 'Close loop settings' }).click();
+  await page.getByRole('button', { name: 'Pause loops on this device', exact: true }).click();
+  await expect(page.locator('#loop-status')).toHaveText('Paused here');
+  await page.getByRole('button', { name: 'Resume loops on this device', exact: true }).click();
+  await expect(page.locator('#loop-status')).toContainText('180 BPM');
+});
+test('recording can be canceled and loop controls stay usable on a small phone', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 }); await page.goto(origin); await page.locator('#focus').click();
+  await page.getByRole('button', { name: 'Record loop', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancel count-in', exact: true }).click();
+  await expect(page.locator('#layer-count')).toHaveText('0 layers');
+  const size = await page.locator('#record-loop').boundingBox(); expect(size.height).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  expect(await page.locator('.keyboard').evaluate(el => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(568);
+  await expect(page.locator('.brand svg').first()).toBeVisible();
+});
+test('a phone can record a layer with the pads without leaving focus mode', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 568 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`${origin}/?room=phone-loop`); await page.locator('#focus').tap(); await setQuickLoop(page);
+  await page.getByRole('button', { name: 'Record loop', exact: true }).tap();
+  await expect(page.getByRole('button', { name: 'Finish recording', exact: true })).toBeVisible({ timeout: 10000 });
+  await page.locator('[data-note="0"]').tap();
+  await expect(page.locator('#layer-count')).toHaveText('1 layer', { timeout: 10000 });
+  expect(await page.locator('.keyboard').evaluate(el => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(568);
+  expect(errors).toEqual([]); await context.close();
+});

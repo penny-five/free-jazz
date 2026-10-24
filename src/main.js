@@ -1,7 +1,8 @@
 import './style.css';
 import { createClient } from '@supabase/supabase-js';
+import { mountLoopStation } from './loop-ui.js';
 import { unlock, playNote, volume, mute } from './music.js';
-import { instruments, instrumentIds, scales, instrumentArt, icon } from './instruments.js';
+import { instruments, instrumentIds, scales, instrumentArt, icon, brandMark } from './instruments.js';
 
 const $ = selector => document.querySelector(selector);
 const configured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
@@ -17,13 +18,13 @@ volume(soundLevel / 100);
 
 document.querySelector('#app').innerHTML = `
 <a class="skip-link" href="#studio">Skip to instruments</a>
-<header class="site-header"><a class="brand" href="/" aria-label="Freeform home">freeform<span>✳</span></a><span class="tagline">A LITTLE CHAOS. A LITTLE CONNECTION.</span><nav><button id="about" class="text-button">How to play ${icon('arrow')}</button><button id="focus" class="icon-button" aria-label="Enter focus mode" aria-pressed="false">${icon('expand')}</button></nav></header>
+<header class="site-header"><a class="brand" href="/" aria-label="Freeform home">freeform<span>${brandMark()}</span></a><span class="tagline">A LITTLE CHAOS. A LITTLE CONNECTION.</span><nav><button id="about" class="text-button">How to play ${icon('arrow')}</button><button id="focus" class="icon-button" aria-label="Enter focus mode" aria-pressed="false">${icon('expand')}</button></nav></header>
 <main>
-<section class="intro" aria-labelledby="page-title"><div class="intro-copy"><div class="eyebrow"><span class="tiny-dot"></span> THE INTERNET'S OPEN JAM SESSION</div><h1 id="page-title">Less rules.<br><em>More feeling.</em><span class="title-star">✳</span></h1><p>A pocket-sized playground for beautiful noise.<br>Pick a sound. Bring a friend. See where it goes.</p><a class="intro-link" href="#studio">Find your sound ${icon('arrow')}</a></div><div class="intro-art"><img src="/art/jazz-club.svg" width="640" height="400" alt="An illustrated jazz cassette and a play-by-feel music poster" fetchpriority="high"><span class="art-caption">NO REHEARSAL REQUIRED. / VOL. 002</span></div></section>
+<section class="intro" aria-labelledby="page-title"><div class="intro-copy"><div class="eyebrow"><span class="tiny-dot"></span> THE INTERNET'S OPEN JAM SESSION</div><h1 id="page-title">Less rules.<br><em>More feeling.</em><span class="title-star">${brandMark()}</span></h1><p>A pocket-sized playground for beautiful noise.<br>Pick a sound. Bring a friend. See where it goes.</p><a class="intro-link" href="#studio">Find your sound ${icon('arrow')}</a></div><div class="intro-art"><img src="/art/jazz-club.svg" width="640" height="400" alt="An illustrated jazz cassette and a play-by-feel music poster" fetchpriority="high"><span class="art-caption">NO REHEARSAL REQUIRED. / VOL. 002</span></div></section>
 <section class="studio" id="studio" aria-label="Your music studio">
 <div class="room-bar"><button id="room-picker" class="room-picker" aria-label="Change room"><span class="live-dot"></span><span id="room-name"></span>${icon('chevron')}</button><span class="connection" id="connection">${configured ? 'CONNECTING' : 'LOCAL SESSION'}</span><button id="invite" class="invite-button">${icon('share')}<span>Invite a friend</span></button></div>
 <div class="stage"><canvas id="score" aria-label="Live visual score"></canvas><div class="stage-top"><div class="avatars"><span class="avatar">YOU</span><span id="players">Just you. Room for more.</span></div><span class="stage-label">SOUND HAS NO STRAIGHT LINES <span>↗</span></span></div>
-<div class="stage-center" id="stage-hint"><div class="stage-mark">✳</div><h2>Your next good accident.</h2><p>Eight voices. Infinite ways to get a little lost.</p><button id="start" class="primary-button">Let's make some noise ${icon('arrow')}</button><small>Tap to turn on sound. Headphones recommended.</small></div>
+<div class="stage-center" id="stage-hint"><div class="stage-mark">${brandMark()}</div><h2>Your next good accident.</h2><p>Eight voices. Infinite ways to get a little lost.</p><button id="start" class="primary-button">Let's make some noise ${icon('arrow')}</button><small>Tap to turn on sound. Headphones recommended.</small></div>
 <div id="playing-hint" class="playing-hint" hidden><span>GO ON. MAKE A MARK.</span><strong id="last-note">The room is listening.</strong></div>
 <div class="stage-footer"><span><i></i><span id="status">${configured ? 'Joining the room…' : 'Local mode · shared across tabs'}</span></span><span id="note-count">000 NOTES INTO THE UNKNOWN</span></div></div>
 <div class="instrument-heading"><div><span class="eyebrow">01 / PICK YOUR VOICE</span><h2>A small band, all yours.</h2></div><span class="swipe-hint">SWIPE TO EXPLORE ${icon('arrow')}</span><span class="desktop-hint">8 INSTRUMENTS · ALL SYNTHESIZED</span></div>
@@ -32,10 +33,10 @@ document.querySelector('#app').innerHTML = `
 <div class="keyboard" aria-label="Playable pads">${keys.map((key, i) => `<button class="pad" data-note="${i}" aria-label="Play ${scales.blues.labels[i]}, pad ${i + 1}" style="--pad-color:${colors[i % 4]}"><span class="pad-number">0${i + 1}</span><span class="note-name">${scales.blues.labels[i]}</span><span class="key-label">${key.toUpperCase()}</span><span class="pad-line"></span></button>`).join('')}</div>
 <div class="playbar"><span class="play-tip"><span class="desktop-only">YOUR KEYBOARD IS AN INSTRUMENT. <kbd>A</kbd> — <kbd>K</kbd></span><span class="touch-only">TAP, HOLD & SLIDE. FIND YOUR FLOW.</span></span><div class="volume-control"><button id="mute" class="icon-button" aria-label="Mute sound" aria-pressed="false">${icon('sound')}</button><label for="volume" class="sr-only">Volume</label><input id="volume" type="range" min="0" max="100" value="${soundLevel}" aria-label="Volume"><output id="volume-value" for="volume">${soundLevel}%</output></div></div></div>
 </section>
-<section class="session-note"><span class="note-star">✳</span><div><strong>A little less scrolling. A little more soul.</strong><p>There are no scores here. Just the sounds you make together.</p></div><span class="session-note-end">LISTEN. RESPOND.<br>SURPRISE YOURSELF.</span></section>
+<section class="session-note"><span class="note-star">${brandMark()}</span><div><strong>A little less scrolling. A little more soul.</strong><p>There are no scores here. Just the sounds you make together.</p></div><span class="session-note-end">LISTEN. RESPOND.<br>SURPRISE YOURSELF.</span></section>
 <section class="field-notes" aria-label="Ways to play"><div class="field-heading"><span class="eyebrow">A FEW NOTES BEFORE YOU GO</span><h2>Good things happen<br><em>when you play.</em></h2></div><article class="field-card"><span class="field-number">01</span><div class="field-illustration" style="--art-bg:#d9e7ac">${instrumentArt('keys')}</div><h3>Start with a feeling.</h3><p>Soft keys for a slow morning. A sax for the small hours. There’s a voice for wherever you are.</p></article><article class="field-card"><span class="field-number">02</span><div class="field-illustration" style="--art-bg:#c9bde4">${instrumentArt('vibes')}</div><h3>Leave a little space.</h3><p>Play a few notes. Let them linger. Sometimes the best part is what happens in between.</p></article><article class="field-card"><span class="field-number">03</span><div class="field-illustration" style="--art-bg:#edba91">${instrumentArt('sax')}</div><h3>Make room for someone.</h3><p>Share your room link. A friend can join from their phone. No account, no audition, just play.</p></article></section>
-</main><footer><a class="brand" href="/">freeform<span>✳</span></a><span>A SPACE FOR UNSCRIPTED SOUND.</span><span>STAY A LITTLE WEIRD ↗</span></footer>
-<dialog id="help" aria-labelledby="help-title"><button id="close-help" class="dialog-close icon-button" aria-label="Close">${icon('close')}</button><div class="eyebrow">THERE'S NO WRONG WAY IN</div><h2 id="help-title">Follow your ears.</h2><p>Pick one of eight instruments, then tap the pads or press <strong>A S D F G H J K</strong>. On a phone, slide across the pads or use several fingers at once.</p><p>Try a different scale, shift the octave, or use <strong>focus mode</strong> in the top bar for more room to play. Drums have eight different hits.</p><p>Invite a friend to your room. Everyone with the link can join; rooms are public. Notes are live and never recorded. Sound starts with your first tap.</p><button id="help-done" class="primary-button">Got it. Let's play ${icon('arrow')}</button></dialog>
+</main><footer><a class="brand" href="/">freeform<span>${brandMark()}</span></a><span>A SPACE FOR UNSCRIPTED SOUND.</span><span>STAY A LITTLE WEIRD ↗</span></footer>
+<dialog id="help" aria-labelledby="help-title"><button id="close-help" class="dialog-close icon-button" aria-label="Close">${icon('close')}</button><div class="eyebrow">THERE'S NO WRONG WAY IN</div><h2 id="help-title">Follow your ears.</h2><p>Pick one of eight instruments, then tap the pads or press <strong>A S D F G H J K</strong>. On a phone, slide across the pads or use several fingers at once.</p><p>Try a different scale, shift the octave, or use <strong>focus mode</strong> in the top bar for more room to play. Drums have eight different hits.</p><p><strong>Build a band:</strong> tap Record loop above the pads, wait for the count-in, and play. Each take repeats automatically. Add up to six layers, or use + Notes in Your loop orchestra to overdub. Press R to record on a keyboard.</p><p>Invite a friend to your room. Everyone with the link can join; rooms are public. Loop takes are shared as note patterns while people are in the room. They are not saved as audio files. Sound starts with your first tap.</p><button id="help-done" class="primary-button">Got it. Let's play ${icon('arrow')}</button></dialog>
 <dialog id="room-dialog" aria-labelledby="room-title"><button id="close-room" class="dialog-close icon-button" aria-label="Close room dialog">${icon('close')}</button><div class="eyebrow">FIND YOUR PEOPLE</div><h2 id="room-title">A room of your own.</h2><p>Choose a room name. Friends using the same name will play together.</p><form id="room-form"><label for="room-input">Room name</label><input id="room-input" name="room" type="text" maxlength="48" pattern="[a-zA-Z0-9-]+" required autocomplete="off" spellcheck="false"><small>Letters, numbers, and hyphens. Anyone with the link can join.</small><button class="primary-button" type="submit">Enter room ${icon('arrow')}</button></form></dialog><div id="toast" role="status" aria-live="polite"></div>`;
 
 $('#room-name').textContent = room.replaceAll('-', ' ');
@@ -49,7 +50,7 @@ async function begin() {
   if (beginPromise) return beginPromise;
   beginPromise = (async () => {
     try {
-      await unlock(); started = true;
+      await unlock(); started = true; looper.setReady();
       $('#stage-hint').classList.add('hidden'); $('#playing-hint').hidden = false;
     } catch { toast('Sound could not start. Try tapping again in a supported browser.'); }
     finally { beginPromise = null; }
@@ -150,11 +151,11 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) { cancelAnimationFrame(frame); frame = 0; previousTime = 0; }
   else if (!frame) draw();
 });
-function receive(event) {
+function receive(event, { audible = true } = {}) {
   if (!event || !Number.isInteger(event.note) || event.note < 0 || event.note > 7 || !instrumentIds.has(event.instrument)) return;
   const eventScale = event.scale ?? 'blues', eventOctave = event.octave ?? 0;
-  if (!Object.hasOwn(scales, eventScale) || ![-1, 0, 1].includes(eventOctave)) return;
-  playNote(event.note, event.instrument, eventScale, eventOctave);
+  if (typeof eventScale !== 'string' || !Object.hasOwn(scales, eventScale) || ![-1, 0, 1].includes(eventOctave)) return;
+  if (audible) playNote(event.note, event.instrument, eventScale, eventOctave);
   count++;
   $('#note-count').textContent = `${String(count).padStart(3, '0')} NOTES INTO THE UNKNOWN`;
   const voice = instruments.find(item => item.id === event.instrument);
@@ -169,7 +170,9 @@ function receive(event) {
 async function trigger(note) {
   // Snapshot the voice before the audio unlock promise resolves.
   const event = { note, instrument, scale, octave, id };
+  looper.capture(event); // Capture the gesture before an audio-resume promise can delay it.
   if (!started) await begin();
+  else { try { await unlock(); } catch { toast('Tap the sound button to resume audio.'); return; } }
   if (!started) return;
   receive(event);
   if (connected) channel.send({ type: 'broadcast', event: 'note', payload: event });
@@ -195,14 +198,25 @@ document.querySelectorAll('[data-note]').forEach(pad => pad.addEventListener('cl
   if (event.detail === 0) trigger(Number(pad.dataset.note)); // Keyboard and assistive-technology activation.
 }));
 window.addEventListener('keydown', event => {
-  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || help.open || roomDialog.open || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
   const note = keys.indexOf(event.key.toLowerCase());
   if (note >= 0) { event.preventDefault(); trigger(note); }
+});
+const looper = mountLoopStation({
+  peerId: id,
+  send: packet => {
+    if (connected) channel.send({ type: 'broadcast', event: 'loops', payload: packet });
+    else if (!configured) local?.postMessage(packet);
+  },
+  ensureAudio: async () => { await begin(); return started; },
+  onVisual: note => receive(note, { audible: false }),
+  onNotice: toast,
 });
 if (configured) {
   const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
   channel = supabase.channel(`freeform:${room}`, { config: { broadcast: { self: false }, presence: { key: id } } });
   channel.on('broadcast', { event: 'note' }, ({ payload }) => receive(payload))
+    .on('broadcast', { event: 'loops' }, ({ payload }) => looper.receive(payload))
     .on('presence', { event: 'sync' }, () => {
       const total = Object.keys(channel.presenceState()).length;
       $('#players').textContent = total <= 1 ? 'Just you. Room for more.' : `${total} players finding their rhythm`;
@@ -211,12 +225,13 @@ if (configured) {
       $('#connection').textContent = connected ? 'LIVE ROOM' : 'CONNECTING';
       $('#status').textContent = connected ? 'Connected · listening to each other' : 'Connecting · you can still play';
       $('.live-dot').classList.toggle('is-connected', connected);
-      if (connected) await channel.track({ joined_at: new Date().toISOString() });
+      if (connected) { await channel.track({ joined_at: new Date().toISOString() }); looper.sync(); }
     });
   window.addEventListener('pagehide', () => supabase.removeAllChannels(), { once: true });
 } else {
   local = new BroadcastChannel(`freeform:${room}`);
-  local.onmessage = ({ data }) => receive(data);
+  local.onmessage = ({ data }) => data?.kind ? looper.receive(data) : receive(data);
+  looper.sync();
   window.addEventListener('pagehide', () => local.close(), { once: true });
 }
 updatePads();

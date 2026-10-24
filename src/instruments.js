@@ -28,6 +28,10 @@ export function instrumentArt(id) {
   return `<svg viewBox="0 0 140 100" aria-hidden="true" focusable="false"><ellipse cx="70" cy="88" rx="43" ry="5" fill="#253e2b" opacity=".09"/>${drawings[id]}</svg>`;
 }
 export function icon(name) {
- const paths={sound:'<path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15 8a6 6 0 010 8m3-11a10 10 0 010 14"/>',muted:'<path d="M11 5L6 9H3v6h3l5 4V5zM16 9l5 6m0-6l-5 6"/>',expand:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',share:'<path d="M12 15V3m-4 4l4-4 4 4M6 10H4v11h16V10h-2"/>',arrow:'<path d="M5 12h14m-6-6l6 6-6 6"/>',close:'<path d="M6 6l12 12M6 18L18 6"/>',chevron:'<path d="M6 9l6 6 6-6"/>',spark:'<path d="M12 2v20M2 12h20M5 5l14 14M5 19L19 5"/>'};
+ const paths={sound:'<path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15 8a6 6 0 010 8m3-11a10 10 0 010 14"/>',muted:'<path d="M11 5L6 9H3v6h3l5 4V5zM16 9l5 6m0-6l-5 6"/>',expand:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>',share:'<path d="M12 15V3m-4 4l4-4 4 4M6 10H4v11h16V10h-2"/>',arrow:'<path d="M5 12h14m-6-6l6 6-6 6"/>',close:'<path d="M6 6l12 12M6 18L18 6"/>',chevron:'<path d="M6 9l6 6 6-6"/>',spark:'<path d="M4 9v6M9 5v14M15 2v20M20 7v10" stroke-width="3"/>'};
  return `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.spark}</svg>`;
+}
+
+export function brandMark() {
+  return '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false" fill="currentColor"><rect x="2" y="10" width="5" height="12" rx="2.5"/><rect x="10" y="5" width="5" height="22" rx="2.5"/><rect x="18" y="1" width="5" height="30" rx="2.5"/><rect x="26" y="8" width="5" height="16" rx="2.5"/></svg>';
 }

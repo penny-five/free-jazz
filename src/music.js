@@ -26,24 +26,40 @@ export function mute(value) {
   muted = value;
   if (master) master.gain.setTargetAtTime(muted ? 0 : level, context.currentTime, .015);
 }
-export function playNote(index, instrument = 'keys', scale = 'blues', octave = 0) {
+export function audioTime() { return context?.currentTime ?? 0; }
+export function stopLoopVoices(tag) { for (const voice of [...voices]) if (voice.tag === tag) voice.finish(true); }
+export function playClick(when, accent = false) {
+  if (!context || context.state !== 'running') return;
+  const osc = context.createOscillator(), gain = context.createGain();
+  osc.frequency.value = accent ? 1300 : 900; gain.gain.setValueAtTime(.055, when);
+  gain.gain.exponentialRampToValueAtTime(.0001, when + .035);
+  osc.connect(gain).connect(master); osc.start(when); osc.stop(when + .04);
+  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+}
+export function playNote(index, instrument = 'keys', scale = 'blues', octave = 0, options = {}) {
   if (!context || context.state !== 'running' || !instrumentIds.has(instrument) || !Object.hasOwn(scales, scale)) return;
   if (!Number.isInteger(index) || index < 0 || index > 7 || ![-1, 0, 1].includes(octave)) return;
   // Bound polyphony so busy rooms do not accumulate oscillators on phones.
-  if (voices.size >= 24) voices.values().next().value.finish();
-  const now = context.currentTime;
+  if (voices.size >= 48) voices.values().next().value.finish();
+  const now = Math.max(context.currentTime, Math.min(context.currentTime + .25, options.when ?? context.currentTime));
   const frequency = 440 * 2 ** ((scales[scale].midi[index] + octave * 12 - 69) / 12);
   const output = context.createGain();
   output.connect(master);
   const nodes = [output], sources = [];
   let finished = false, timer;
-  const voice = { finish() {
+  const voice = { tag: options.tag, finish(fade = false) {
     if (finished) return;
     finished = true;
     clearTimeout(timer);
-    sources.forEach(source => { try { source.stop(); } catch {} });
-    nodes.forEach(node => node.disconnect());
     voices.delete(voice);
+    const release = fade && context.state === 'running';
+    if (release) {
+      output.gain.cancelScheduledValues(context.currentTime);
+      output.gain.setTargetAtTime(.0001, context.currentTime, .004);
+    }
+    sources.forEach(source => { try { source.stop(context.currentTime + (release ? .02 : 0)); } catch {} });
+    if (release) setTimeout(() => nodes.forEach(node => node.disconnect()), 30);
+    else nodes.forEach(node => node.disconnect());
   } };
   voices.add(voice);
   function oscillator(type, hz, amplitude = 1, destination = output, detune = 0) {
@@ -105,8 +121,8 @@ export function playNote(index, instrument = 'keys', scale = 'blues', octave = 0
     attack = .06; duration = .75; peak = .32;
   }
   output.gain.setValueAtTime(0, now);
-  output.gain.linearRampToValueAtTime(peak, now + attack);
+  output.gain.linearRampToValueAtTime(peak * (options.gain ?? 1), now + attack);
   output.gain.exponentialRampToValueAtTime(.0001, now + duration);
   sources.forEach(source => source.stop(now + duration + .04));
-  timer = setTimeout(() => voice.finish(), (duration + .1) * 1000);
+  timer = setTimeout(() => voice.finish(), (now - context.currentTime + duration + .1) * 1000);
 }

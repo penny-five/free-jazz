@@ -7,8 +7,9 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "playwright test",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name free-jazz --branch main"
+    "test": "npm run test:unit && playwright test",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name free-jazz --branch main",
+    "test:unit": "node --test test/*.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
